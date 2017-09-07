@@ -50,6 +50,7 @@ scalacOptions ++= Seq(
   "-Yno-adapted-args",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
+  "-Ywarn-unused-import",
   "-Xfuture"
 )
 
