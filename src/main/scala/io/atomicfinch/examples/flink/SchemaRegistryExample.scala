@@ -17,9 +17,11 @@
  */
 package io.atomicfinch.examples.flink
 
-import org.apache.flink.streaming.api.scala._
+import scala.util.Try
 
 import org.apache.avro.generic.GenericRecord
+
+import org.apache.flink.streaming.api.scala._
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
@@ -73,7 +75,14 @@ object SchemaRegistryExample {
               new HortonworksRegistryDeserializationSchema[GenericRecord](classOf[GenericRecord]),
               params.getProperties)
           consumer.setStartFromLatest()
-          env.addSource(consumer).map(_.toString)
+          env.addSource(consumer).flatMap { record =>
+            for (user <- Try(record.get("user").asInstanceOf[GenericRecord]).toOption)
+              yield Seq(
+              Option(user.get("name")).map(_.toString.replaceAll("\\s", " ")).getOrElse(""),
+              Option(user.get("screen_name")).map(_.toString.replaceAll("\\s", " ")).getOrElse(""),
+              Option(user.get("description")).map(_.toString.replaceAll("\\s", " ")).getOrElse(""),
+              Option(user.get("location")).map(_.toString.replaceAll("\\s", " ")).getOrElse("")).mkString("\t")
+          }
         }
         case s => {
           println(s"Unknown schema type: ${s}")

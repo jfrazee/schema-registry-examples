@@ -21,6 +21,7 @@
                 {"name": "location", "type": ["null", "string"]},
                 {"name": "url", "type": ["null", "string"]},
                 {"name": "description", "type": ["null", "string"]},
+                {"name": "statuses_count", "type": "long"},
                 {"name": "followers_count", "type": "long"},
                 {"name": "friends_count", "type": "long"}
             ]
