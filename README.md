@@ -116,14 +116,8 @@ $ ./sbt
 > run --bootstrap.servers localhost:9092 --zookeeper.connect --group.id test --schema NONE --topic tweets.avro.embedded
 ```
 
-#### Confluent Schema Registry
-
-```sh
-> run --bootstrap.servers localhost:9092 --zookeeper.connect --group.id test --schema NONE --topic tweets.avro.confluent
-```
-
 #### Hortonworks Schema Registry
 
 ```sh
-> run --bootstrap.servers localhost:9092 --zookeeper.connect --group.id test --schema NONE --topic tweets.avro.hortonworks
+> run --bootstrap.servers localhost:9092 --zookeeper.connect --group.id test --schema HORTONWORKS --topic tweets.avro.hortonworks
 ```
