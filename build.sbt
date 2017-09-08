@@ -17,6 +17,7 @@ resolvers ++= Seq(
 )
 
 val AvroVersion = "1.8.2"
+val HortonworksRegistryVersion = "0.2.1"
 val FlinkVersion = "1.3.2"
 val TypesafeConfigVersion = "1.3.1"
 val ScalatestVersion = "3.0.1"
@@ -31,6 +32,7 @@ val flinkDependencies = Seq(
 
 libraryDependencies ++= Seq(
   "org.apache.avro" % "avro" % AvroVersion,
+  "com.hortonworks.registries" % "schema-registry-serdes" % HortonworksRegistryVersion,
   "com.typesafe" %  "config" % TypesafeConfigVersion,
   "org.joda" % "joda-convert" % JodaConvertVersion,
   "org.scalatest" %% "scalatest" % ScalatestVersion % "test",

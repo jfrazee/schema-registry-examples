@@ -66,6 +66,15 @@ object SchemaRegistryExample {
           consumer.setStartFromLatest()
           env.addSource(consumer).map(_.toString)
         }
+        case "HORTONWORKS" => {
+          val consumer =
+            new FlinkKafkaConsumer010(
+              params.getRequired("topic"),
+              new HortonworksRegistryDeserializationSchema[GenericRecord](classOf[GenericRecord]),
+              params.getProperties)
+          consumer.setStartFromLatest()
+          env.addSource(consumer).map(_.toString)
+        }
         case s => {
           println(s"Unknown schema type: ${s}")
           return
