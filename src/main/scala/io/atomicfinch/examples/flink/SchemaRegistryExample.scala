@@ -68,6 +68,22 @@ object SchemaRegistryExample {
           consumer.setStartFromLatest()
           env.addSource(consumer).map(_.toString)
         }
+        case "CONFLUENT" => {
+          val consumer =
+            new FlinkKafkaConsumer010(
+              params.getRequired("topic"),
+              new ConfluentRegistryDeserializationSchema[GenericRecord](classOf[GenericRecord]),
+              params.getProperties)
+          consumer.setStartFromLatest()
+          env.addSource(consumer).flatMap { record =>
+            for (user <- Try(record.get("user").asInstanceOf[GenericRecord]).toOption)
+              yield Seq(
+              Option(user.get("name")).map(_.toString.replaceAll("\\s", " ")).getOrElse(""),
+              Option(user.get("screen_name")).map(_.toString.replaceAll("\\s", " ")).getOrElse(""),
+              Option(user.get("description")).map(_.toString.replaceAll("\\s", " ")).getOrElse(""),
+              Option(user.get("location")).map(_.toString.replaceAll("\\s", " ")).getOrElse("")).mkString("\t")
+          }
+        }
         case "HORTONWORKS" => {
           val consumer =
             new FlinkKafkaConsumer010(

@@ -11,6 +11,7 @@ resolvers ++= Seq(
   DefaultMavenRepository,
   Resolver.bintrayRepo("typesafe", "releases"),
   Resolver.sonatypeRepo("releases"),
+  "Confluent Platform" at "http://packages.confluent.io/maven/",
   "Apache Releases" at "https://repository.apache.org/content/repositories/releases/",
   "Apache Snapshots" at "https://repository.apache.org/content/repositories/snapshots/",
   Resolver.mavenLocal
@@ -18,12 +19,21 @@ resolvers ++= Seq(
 
 val AvroVersion = "1.8.2"
 val HortonworksRegistryVersion = "0.2.1"
+val ConfluentRegistryVersion = "3.3.0"
 val FlinkVersion = "1.3.2"
 val ScalatestVersion = "3.0.1"
 val ScalacheckVersion = "1.13.4"
 
 libraryDependencies ++= Seq(
   "org.apache.avro" % "avro" % AvroVersion,
+  "io.confluent" % "kafka-schema-registry" % ConfluentRegistryVersion excludeAll(
+    ExclusionRule(organization = "org.slf4j", name = "slf4j-log4j12"),
+    ExclusionRule(organization = "log4j", name = "log4j")
+  ),
+  "io.confluent" % "kafka-schema-registry-client" % ConfluentRegistryVersion excludeAll(
+    ExclusionRule(organization = "org.slf4j", name = "slf4j-log4j12"),
+    ExclusionRule(organization = "log4j", name = "log4j")
+  ),
   "com.hortonworks.registries" % "schema-registry-client" % HortonworksRegistryVersion,
   "org.apache.flink" %% "flink-scala" % FlinkVersion % "provided" excludeAll(
     ExclusionRule(organization = "com.sun.jersey", name = "jersey-client")

@@ -19,9 +19,10 @@ package io.atomicfinch.examples.flink
 
 import java.nio.ByteBuffer
 
-import com.hortonworks.registries.schemaregistry.SchemaVersionKey
-import com.hortonworks.registries.schemaregistry.client.SchemaRegistryClient
-import com.hortonworks.registries.schemaregistry.errors.SchemaNotFoundException
+import scala.util.Try
+
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import io.confluent.kafka.schemaregistry.rest.exceptions.Errors
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericDatumReader
@@ -38,66 +39,54 @@ import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
 
 @SerialVersionUID(1L)
-class HortonworksRegistryDeserializationSchema[T](avroType: Class[T], url: String = "http://localhost:9999/api/v1") extends DeserializationSchema[T] {
-
-  import scala.collection.JavaConverters._
+class ConfluentRegistryDeserializationSchema[T](avroType: Class[T], url: String = "http://localhost:8081/") extends DeserializationSchema[T] {
 
   @transient
   private[this] lazy val typeInfo = TypeExtractor.getForClass(avroType)
 
   @transient
-  private[this] lazy val registryConfig = Map(
-    SchemaRegistryClient.Configuration.SCHEMA_REGISTRY_URL.name -> url)
-
-  @transient
   private[this] lazy val registryClient =
-    new SchemaRegistryClient(registryConfig.asJava)
+    new CachedSchemaRegistryClient(url, 1000)
 
   @transient
   private[this] var decoder: BinaryDecoder = null
 
-  private[this] def getSchemaInfo(message: Array[Byte]): (Long, Int) = {
-    if (message.length < 13)
+  private[this] def getSchemaId(message: Array[Byte]): Int = {
+    if (message.length < 5)
       throw new IllegalArgumentException(s"Message is too short for schema encoding reference: ${message.mkString(" ")}")
 
     val buffer = ByteBuffer.wrap(message)
 
-    val encodingVersion = buffer.get
-    if (encodingVersion > 1)
-      throw new IllegalArgumentException(s"Unrecognized schema encoding version: ${encodingVersion}")
+    val magicByte = buffer.get
+    if (magicByte > 0)
+      throw new IllegalArgumentException(s"Unrecognized magic byte: ${magicByte}")
 
-    val schemaId = buffer.getLong
-    val schemaVersion = buffer.getInt
+    val schemaId = buffer.getInt
 
-    (schemaId, schemaVersion)
+    schemaId
   }
 
-  private[this] def getContentsWithInfo(message: Array[Byte]): (Array[Byte], Long, Int) = {
-    val (schemaId, schemaVersion) = getSchemaInfo(message)
-    val contents = message.drop(13)
+  private[this] def getContentsWithSchemaId(message: Array[Byte]): (Array[Byte], Int) = {
+    val schemaId = getSchemaId(message)
+    val contents = message.drop(5)
 
     if (contents.isEmpty)
       throw new IllegalArgumentException(s"Message is 0 bytes")
 
-    (contents, schemaId, schemaVersion)
+    (contents, schemaId)
   }
 
-  // TODO: Handle failure from getSchemaVersionInfo
-  private[this] def getSchema(schemaId: Long, schemaVersion: Int): Option[Schema] = {
+  private[this] def getSchema(schemaId: Int): Option[Schema] = {
     for {
-      schemaMetadataInfo <- Option(registryClient.getSchemaMetadataInfo(schemaId))
-      schemaMetadata <- Option(schemaMetadataInfo.getSchemaMetadata())
-      schemaName <- Option(schemaMetadata.getName())
-      schemaVersionKey = new SchemaVersionKey(schemaName, schemaVersion)
-      schemaVersionInfo <- Option(registryClient.getSchemaVersionInfo(schemaVersionKey))
-      schemaText <- Option(schemaVersionInfo.getSchemaText())
-    } yield new Schema.Parser().parse(schemaText)
+      result <- Try(registryClient.getById(schemaId)).toOption
+      schema <- Option(result)
+    } yield schema
   }
 
   override def deserialize(message: Array[Byte]): T = {
-    val (contents, schemaId, schemaVersion) = getContentsWithInfo(message)
+    val (contents, schemaId) = getContentsWithSchemaId(message)
 
-    getSchema(schemaId, schemaVersion) match {
+    getSchema(schemaId) match {
       case Some(schema) => {
         val reader: DatumReader[T] =
           if (avroType == classOf[GenericRecord])
@@ -116,7 +105,7 @@ class HortonworksRegistryDeserializationSchema[T](avroType: Class[T], url: Strin
         }
       }
       case _ =>
-        throw new SchemaNotFoundException(s"No schema found matching id and version: ${schemaId}v${schemaVersion}")
+        throw Errors.schemaNotFoundException()
     }
   }
 

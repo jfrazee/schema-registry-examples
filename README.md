@@ -107,17 +107,23 @@ $ ./sbt
 #### Raw Data
 
 ```sh
-> run --bootstrap.servers localhost:9092 --zookeeper.connect --group.id test --schema NONE --topic tweets
+> run --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id test --schema NONE --topic tweets
 ```
 
 #### Embedded Schema
 
 ```sh
-> run --bootstrap.servers localhost:9092 --zookeeper.connect --group.id test --schema NONE --topic tweets.avro.embedded
+> run --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id test --schema NONE --topic tweets.avro.embedded
+```
+
+#### Confluent Schema Registry
+
+```sh
+> run --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id test --schema CONFLUENT --topic tweets.avro.confluent
 ```
 
 #### Hortonworks Schema Registry
 
 ```sh
-> run --bootstrap.servers localhost:9092 --zookeeper.connect --group.id test --schema HORTONWORKS --topic tweets.avro.hortonworks
+> run --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id test --schema HORTONWORKS --topic tweets.avro.hortonworks
 ```
