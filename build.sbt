@@ -19,28 +19,25 @@ resolvers ++= Seq(
 val AvroVersion = "1.8.2"
 val HortonworksRegistryVersion = "0.2.1"
 val FlinkVersion = "1.3.2"
-val TypesafeConfigVersion = "1.3.1"
 val ScalatestVersion = "3.0.1"
 val ScalacheckVersion = "1.13.4"
-val JodaConvertVersion = "1.8"
-
-val flinkDependencies = Seq(
-  "org.apache.flink" %% "flink-scala" % FlinkVersion % "provided",
-  "org.apache.flink" %% "flink-streaming-scala" % FlinkVersion % "provided",
-  "org.apache.flink" %% "flink-connector-kafka-0.10" % FlinkVersion % "provided"
-)
 
 libraryDependencies ++= Seq(
   "org.apache.avro" % "avro" % AvroVersion,
-  "com.hortonworks.registries" % "schema-registry-serdes" % HortonworksRegistryVersion,
-  "com.typesafe" %  "config" % TypesafeConfigVersion,
-  "org.joda" % "joda-convert" % JodaConvertVersion,
-  "org.scalatest" %% "scalatest" % ScalatestVersion % "test",
-  "org.scalacheck" %% "scalacheck" % ScalacheckVersion % "test"
+  "com.hortonworks.registries" % "schema-registry-client" % HortonworksRegistryVersion,
+  "org.apache.flink" %% "flink-scala" % FlinkVersion % "provided" excludeAll(
+    ExclusionRule(organization = "com.sun.jersey", name = "jersey-client")
+  ),
+  "org.apache.flink" %% "flink-streaming-scala" % FlinkVersion % "provided" excludeAll(
+    ExclusionRule(organization = "com.sun.jersey", name = "jersey-client")
+  ),
+  "org.apache.flink" %% "flink-connector-kafka-0.10" % FlinkVersion % "provided" excludeAll(
+    ExclusionRule(organization = "com.sun.jersey", name = "jersey-client")
+  ),
+  "org.scalatest" %% "scalatest" % ScalatestVersion % "test"
 )
 
-lazy val root = (project in file(".")).
-  settings(libraryDependencies ++= flinkDependencies)
+lazy val root = (project in file("."))
 
 scalacOptions ++= Seq(
   "-deprecation",

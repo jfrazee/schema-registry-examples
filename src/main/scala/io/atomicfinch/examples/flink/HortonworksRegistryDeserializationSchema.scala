@@ -19,6 +19,10 @@ package io.atomicfinch.examples.flink
 
 import java.nio.ByteBuffer
 
+import com.hortonworks.registries.schemaregistry.SchemaVersionKey
+import com.hortonworks.registries.schemaregistry.client.SchemaRegistryClient
+import com.hortonworks.registries.schemaregistry.errors.SchemaNotFoundException
+
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
@@ -28,18 +32,19 @@ import org.apache.avro.io.DecoderFactory
 import org.apache.avro.reflect.ReflectDatumReader
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.avro.specific.SpecificRecordBase
+
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
 
-import com.hortonworks.registries.schemaregistry.SchemaVersionKey
-import com.hortonworks.registries.schemaregistry.client.SchemaRegistryClient
-import com.hortonworks.registries.schemaregistry.errors.SchemaNotFoundException
+import org.slf4j.LoggerFactory
 
 @SerialVersionUID(1L)
 class HortonworksRegistryDeserializationSchema[T](avroType: Class[T], url: String = "http://localhost:9999/api/v1") extends DeserializationSchema[T] {
 
   import scala.collection.JavaConverters._
+
+  lazy val logger = LoggerFactory.getLogger(classOf[HortonworksRegistryDeserializationSchema[T]])
 
   @transient
   private[this] lazy val typeInfo = TypeExtractor.getForClass(avroType)
@@ -71,6 +76,16 @@ class HortonworksRegistryDeserializationSchema[T](avroType: Class[T], url: Strin
     (schemaId, schemaVersion)
   }
 
+  private[this] def getContentsWithInfo(message: Array[Byte]): (Array[Byte], Long, Int) = {
+    val (schemaId, schemaVersion) = getSchemaInfo(message)
+    val contents = message.drop(13)
+
+    if (contents.isEmpty)
+      throw new IllegalArgumentException(s"Message is 0 bytes")
+
+    (contents, schemaId, schemaVersion)
+  }
+
   private[this] def getSchema(schemaId: Long, schemaVersion: Int): Option[Schema] = {
     for {
       schemaMetadataInfo <- Option(registryClient.getSchemaMetadataInfo(schemaId))
@@ -83,7 +98,8 @@ class HortonworksRegistryDeserializationSchema[T](avroType: Class[T], url: Strin
   }
 
   override def deserialize(message: Array[Byte]): T = {
-    val (schemaId, schemaVersion) = getSchemaInfo(message)
+    val (contents, schemaId, schemaVersion) = getContentsWithInfo(message)
+
     getSchema(schemaId, schemaVersion) match {
       case Some(schema) => {
         val reader: DatumReader[T] =
@@ -95,7 +111,7 @@ class HortonworksRegistryDeserializationSchema[T](avroType: Class[T], url: Strin
             new ReflectDatumReader[T](schema)
 
         try {
-          this.decoder = DecoderFactory.get().binaryDecoder(message, decoder)
+          this.decoder = DecoderFactory.get().binaryDecoder(contents, decoder)
           reader.read(null.asInstanceOf[T], decoder)
         } catch {
           case e: Exception =>
