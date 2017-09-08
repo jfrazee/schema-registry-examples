@@ -2,7 +2,7 @@
 <template encoding-version="1.1">
   <description></description>
   <groupId>2022182b-015e-1000-ae2c-6f5daf9377d6</groupId>
-  <name>Twitter Feed Example v1</name>
+  <name>Twitter Feed Example</name>
   <snippet>
     <processGroups>
       <id>f46b1e8e-0be4-30a8-0000-000000000000</id>
@@ -251,6 +251,7 @@
             </entry>
             <entry>
               <key>schema-text</key>
+              <value>${avro.schema}</value>
             </entry>
             <entry>
               <key>Date Format</key>
@@ -328,6 +329,7 @@
             </entry>
             <entry>
               <key>schema-text</key>
+              <value>${avro.schema}</value>
             </entry>
           </properties>
           <state>ENABLED</state>
@@ -371,6 +373,7 @@
             </entry>
             <entry>
               <key>cache-size</key>
+              <value>1000</value>
             </entry>
             <entry>
               <key>cache-expiration</key>
@@ -1090,6 +1093,7 @@
                 <x>346.500004816382</x>
                 <y>12.00000576677229</y>
               </position>
+              <comments></comments>
               <concurrentlySchedulableTaskCount>1</concurrentlySchedulableTaskCount>
               <name>PublishKafkaRecord with Embedded Schema Input Port</name>
               <state>STOPPED</state>
@@ -1558,7 +1562,7 @@
               </entry>
               <entry>
                 <key>topic</key>
-                <value>tweets.avro.embedded,tweets.avro.encoded</value>
+                <value>tweets.avro.embedded,tweets.avro.hortonworks,tweets.avro.confluent</value>
               </entry>
               <entry>
                 <key>topic_type</key>
@@ -1843,7 +1847,7 @@
               </entry>
               <entry>
                 <key>topic</key>
-                <value>tweets.avro.encoded</value>
+                <value>tweets.avro.hortonworks</value>
               </entry>
               <entry>
                 <key>record-reader</key>
@@ -1918,5 +1922,5 @@
       <name>Twitter Feed Example</name>
     </processGroups>
   </snippet>
-  <timestamp>09/07/2017 15:28:20 CDT</timestamp>
+  <timestamp>09/08/2017 12:17:17 CDT</timestamp>
 </template>
